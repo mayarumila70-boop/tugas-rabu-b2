@@ -1,0 +1,1024 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Belajar Angka & Bentuk Ceria 🎈</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Ceria Anak PAUD (Fredoka) -->
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Canvas Confetti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        * {
+            font-family: 'Fredoka', cursive, sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+        }
+
+        body {
+            background: linear-gradient(135deg, #e0f2fe 0%, #fef3c7 50%, #fce7f3 100%);
+            min-height: 100vh;
+        }
+
+        /* Animated bouncy buttons */
+        .btn-bounce {
+            transition: transform 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.15s ease;
+        }
+        .btn-bounce:hover {
+            transform: translateY(-4px) scale(1.03);
+        }
+        .btn-bounce:active {
+            transform: translateY(2px) scale(0.97);
+        }
+
+        /* Star pulse effect */
+        @keyframes starGlow {
+            0%, 100% { transform: scale(1) rotate(0deg); filter: drop-shadow(0 0 5px #f59e0b); }
+            50% { transform: scale(1.2) rotate(10deg); filter: drop-shadow(0 0 15px #fbbf24); }
+        }
+        .star-glow {
+            animation: starGlow 1.5s infinite ease-in-out;
+        }
+
+        /* Floating bubble animation background */
+        .bubble {
+            position: absolute;
+            border-radius: 50%;
+            opacity: 0.25;
+            animation: floatUp 12s infinite linear;
+            pointer-events: none;
+        }
+        @keyframes floatUp {
+            0% { transform: translateY(100vh) rotate(0deg); }
+            100% { transform: translateY(-100px) rotate(360deg); }
+        }
+
+        /* Canvas cursor customization */
+        .draw-cursor {
+            cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="%23ec4899"><circle cx="12" cy="12" r="10"/></svg>') 12 12, pointer;
+        }
+
+        /* Certificate Print CSS */
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #printable-certificate, #printable-certificate * {
+                visibility: visible;
+            }
+            #printable-certificate {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen text-slate-800 relative overflow-x-hidden">
+
+    <!-- Background Floating Bubbles -->
+    <div id="bg-bubbles" class="fixed inset-0 overflow-hidden pointer-events-none z-0">
+        <div class="bubble bg-pink-400 w-16 h-16 left-[10%]" style="animation-delay: 0s;"></div>
+        <div class="bubble bg-yellow-400 w-24 h-24 left-[30%]" style="animation-delay: 3s;"></div>
+        <div class="bubble bg-blue-400 w-20 h-20 left-[60%]" style="animation-delay: 6s;"></div>
+        <div class="bubble bg-green-400 w-14 h-14 left-[85%]" style="animation-delay: 2s;"></div>
+    </div>
+
+    <!-- Main Top Navigation -->
+    <header class="relative z-10 bg-white/80 backdrop-blur-md shadow-md border-b-4 border-yellow-300 px-4 py-3">
+        <div class="max-w-5xl mx-auto flex items-center justify-between">
+            <!-- App Logo & Title -->
+            <button onclick="switchScreen('screen-menu')" class="flex items-center gap-2 group text-left">
+                <div class="w-11 h-11 bg-gradient-to-tr from-pink-500 to-yellow-400 rounded-2xl flex items-center justify-center text-white text-2xl shadow-md group-hover:scale-105 transition-transform">
+                    🎨
+                </div>
+                <div>
+                    <h1 class="text-xl sm:text-2xl font-bold bg-gradient-to-r from-pink-600 via-purple-600 to-blue-600 bg-clip-text text-transparent">
+                        Belajar & Bentuk Ceria
+                    </h1>
+                    <p class="text-xs text-slate-500 font-medium hidden sm:block">PAUD Interaktif (Mengenal & Menulis 1-10)</p>
+                </div>
+            </button>
+
+            <!-- Top Actions: Stars, Sound, Home -->
+            <div class="flex items-center gap-2 sm:gap-3">
+                <!-- Total Stars Counter Badge -->
+                <div class="flex items-center gap-1.5 bg-yellow-100 border-2 border-yellow-400 px-3 py-1.5 rounded-full shadow-sm">
+                    <i class="fa-solid fa-star text-yellow-500 text-lg star-glow"></i>
+                    <span id="global-star-count" class="font-bold text-yellow-700 text-lg">0</span>
+                </div>
+
+                <!-- BGM Music Toggle Button -->
+                <button id="btn-music" onclick="toggleBGM()" class="btn-bounce w-11 h-11 bg-indigo-100 border-2 border-indigo-400 text-indigo-600 rounded-2xl flex items-center justify-center text-lg shadow-sm" title="Musik Latar">
+                    <i id="icon-music" class="fa-solid fa-music"></i>
+                </button>
+
+                <!-- Voice Audio Speech Toggle -->
+                <button id="btn-speech" onclick="toggleVoice()" class="btn-bounce w-11 h-11 bg-emerald-100 border-2 border-emerald-400 text-emerald-600 rounded-2xl flex items-center justify-center text-lg shadow-sm" title="Suara Pembimbing">
+                    <i id="icon-speech" class="fa-solid fa-volume-high"></i>
+                </button>
+
+                <!-- Home Button -->
+                <button onclick="switchScreen('screen-menu')" class="btn-bounce w-11 h-11 bg-pink-500 hover:bg-pink-600 text-white rounded-2xl flex items-center justify-center text-lg shadow-md" title="Menu Utama">
+                    <i class="fa-solid fa-house"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="relative z-10 flex-grow max-w-5xl mx-auto w-full p-4 flex flex-col justify-center">
+
+        <!-- ================= SCREEN 1: MENU UTAMA ================= -->
+        <section id="screen-menu" class="w-full space-y-6 animate-fadeIn">
+            <!-- Banner Objectives -->
+            <div class="bg-gradient-to-r from-purple-500 via-pink-500 to-rose-400 rounded-3xl p-6 text-white shadow-xl text-center relative overflow-hidden">
+                <div class="absolute -right-6 -bottom-6 text-8xl opacity-20 font-bold">123</div>
+                <h2 class="text-2xl sm:text-3xl font-bold mb-2">Yuk, Belajar Sambil Bermain! 🎉</h2>
+                <p class="text-pink-100 text-sm sm:text-base max-w-xl mx-auto">
+                    Mengenal angka 1–10, melatih menulis, mengenal bentuk geometri, dan mewarnai gambar favoritmu!
+                </p>
+            </div>
+
+            <!-- Modules Selection Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Modul 1: Menulis Angka -->
+                <div onclick="startModule1()" class="btn-bounce bg-white rounded-3xl p-6 border-4 border-blue-300 shadow-lg cursor-pointer hover:border-blue-500 flex flex-col justify-between group">
+                    <div>
+                        <div class="flex items-center justify-between mb-4">
+                            <span class="bg-blue-100 text-blue-700 font-bold px-3 py-1 rounded-full text-xs uppercase tracking-wider">Modul 1</span>
+                            <span id="badge-m1" class="text-xs font-semibold bg-slate-100 px-2.5 py-1 rounded-full text-slate-600">0/10 Selesai</span>
+                        </div>
+                        <div class="flex items-center gap-4 mb-3">
+                            <div class="w-16 h-16 bg-blue-500 rounded-2xl flex items-center justify-center text-white text-3xl font-extrabold shadow-md group-hover:rotate-6 transition-transform">
+                                🔢
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-bold text-slate-800">Menulis Angka 1–10</h3>
+                                <p class="text-xs text-slate-500 mt-1">Menelusuri garis putus-putus & mengenal pengucapan angka.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between text-blue-600 font-bold text-sm">
+                        <span>Mulai Menulis</span>
+                        <i class="fa-solid fa-arrow-right group-hover:translate-x-2 transition-transform"></i>
+                    </div>
+                </div>
+
+                <!-- Modul 2: Mewarnai Bentuk Geometri -->
+                <div onclick="startModule2()" class="btn-bounce bg-white rounded-3xl p-6 border-4 border-emerald-300 shadow-lg cursor-pointer hover:border-emerald-500 flex flex-col justify-between group">
+                    <div>
+                        <div class="flex items-center justify-between mb-4">
+                            <span class="bg-emerald-100 text-emerald-700 font-bold px-3 py-1 rounded-full text-xs uppercase tracking-wider">Modul 2</span>
+                            <span id="badge-m2" class="text-xs font-semibold bg-slate-100 px-2.5 py-1 rounded-full text-slate-600">0/6 Selesai</span>
+                        </div>
+                        <div class="flex items-center gap-4 mb-3">
+                            <div class="w-16 h-16 bg-emerald-500 rounded-2xl flex items-center justify-center text-white text-3xl font-extrabold shadow-md group-hover:rotate-6 transition-transform">
+                                🎨
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-bold text-slate-800">Mewarnai Bentuk</h3>
+                                <p class="text-xs text-slate-500 mt-1">Mengenal bentuk geometri & kreasi warna warni.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between text-emerald-600 font-bold text-sm">
+                        <span>Mulai Mewarnai</span>
+                        <i class="fa-solid fa-arrow-right group-hover:translate-x-2 transition-transform"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Trophy & Certificate Section Button -->
+            <div class="bg-gradient-to-r from-amber-100 via-orange-100 to-yellow-100 border-3 border-amber-300 rounded-3xl p-5 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-md">
+                <div class="flex items-center gap-4 text-center sm:text-left">
+                    <div class="text-4xl">🏆</div>
+                    <div>
+                        <h4 class="text-lg font-bold text-amber-900">Sertifikat Juara Ceria</h4>
+                        <p class="text-xs text-amber-700">Selesaikan Modul Menulis & Mewarnai untuk klaim sertifikat resmimu!</p>
+                    </div>
+                </div>
+                <button onclick="openCertificateModal()" class="btn-bounce px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-2xl shadow-md text-sm whitespace-nowrap">
+                    <i class="fa-solid fa-award mr-1.5"></i> Lihat Sertifikat
+                </button>
+            </div>
+        </section>
+
+        <!-- ================= SCREEN 2: MODUL 1 - MENULIS ANGKA ================= -->
+        <section id="screen-m1" class="hidden w-full flex-col items-center gap-4">
+            <!-- Top Controls Bar -->
+            <div class="w-full bg-white rounded-2xl p-4 shadow-md border-2 border-blue-200 flex flex-wrap items-center justify-between gap-3">
+                <div class="flex items-center gap-3">
+                    <button onclick="switchScreen('screen-menu')" class="btn-bounce px-3 py-1.5 bg-slate-100 text-slate-700 rounded-xl text-sm font-bold flex items-center gap-1.5">
+                        <i class="fa-solid fa-arrow-left"></i> Menu
+                    </button>
+                    <h2 class="text-lg sm:text-xl font-bold text-blue-600 flex items-center gap-2">
+                        <span>Menulis Angka</span>
+                        <span id="m1-current-number-title" class="bg-blue-100 text-blue-800 px-3 py-0.5 rounded-full text-base">1</span>
+                    </h2>
+                </div>
+
+                <!-- Number Progress Selector Dots -->
+                <div id="m1-number-nav" class="flex items-center gap-1.5 overflow-x-auto py-1 max-w-full">
+                    <!-- Populated dynamically (1 to 10) -->
+                </div>
+            </div>
+
+            <!-- Interactive Drawing Area & Guide -->
+            <div class="w-full flex flex-col lg:flex-row items-center justify-center gap-6 my-2">
+                
+                <!-- Main Canvas Container -->
+                <div class="relative bg-white rounded-3xl border-4 border-blue-400 shadow-2xl p-3 flex flex-col items-center justify-center max-w-md w-full aspect-square touch-none">
+                    
+                    <!-- Sound Speaker Prompt Button -->
+                    <button onclick="speakCurrentNumberPrompt()" class="absolute top-4 right-4 z-20 btn-bounce w-12 h-12 bg-yellow-400 hover:bg-yellow-500 text-yellow-950 rounded-2xl flex items-center justify-center text-xl shadow-md" title="Dengar Suara Angka">
+                        <i class="fa-solid fa-volume-high"></i>
+                    </button>
+
+                    <!-- Instruction Banner -->
+                    <div class="absolute top-4 left-4 z-20 bg-blue-50 text-blue-700 font-semibold text-xs px-3 py-1.5 rounded-xl border border-blue-200 flex items-center gap-1">
+                        <i class="fa-solid fa-hand-pointer"></i> Ikuti Garis Putus-putus
+                    </div>
+
+                    <!-- Canvas Layers -->
+                    <div class="relative w-full h-full flex items-center justify-center">
+                        <!-- Guide Path Canvas -->
+                        <canvas id="canvas-guide" width="340" height="340" class="absolute inset-0 w-full h-full pointer-events-none"></canvas>
+                        <!-- Interactive User Tracing Canvas -->
+                        <canvas id="canvas-trace" width="340" height="340" class="absolute inset-0 w-full h-full cursor-crosshair"></canvas>
+                    </div>
+
+                    <!-- Clear / Retry Canvas Button -->
+                    <button onclick="resetCurrentTrace()" class="absolute bottom-4 left-4 z-20 btn-bounce px-3 py-1.5 bg-rose-100 hover:bg-rose-200 text-rose-600 rounded-xl text-xs font-bold flex items-center gap-1">
+                        <i class="fa-solid fa-rotate-right"></i> Ulangi
+                    </button>
+
+                    <!-- Star completion indicator on canvas -->
+                    <div id="m1-star-success" class="hidden absolute inset-0 bg-white/90 rounded-2xl z-30 flex-col items-center justify-center gap-3 animate-fadeIn">
+                        <i class="fa-solid fa-star text-7xl text-yellow-400 star-glow"></i>
+                        <h3 id="m1-success-text" class="text-2xl font-bold text-center text-slate-800 px-4">Hebat! Ini angka 1</h3>
+                        <button onclick="nextNumber()" class="btn-bounce mt-2 px-6 py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-2xl shadow-lg flex items-center gap-2">
+                            <span>Lanjut Angka Berikutnya</span>
+                            <i class="fa-solid fa-arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Side Helper & Instructions panel -->
+                <div class="flex flex-col gap-4 w-full lg:w-64">
+                    <div class="bg-white p-5 rounded-3xl border-2 border-slate-200 shadow-md">
+                        <h4 class="font-bold text-slate-700 mb-2 flex items-center gap-2">
+                            <i class="fa-solid fa-circle-info text-blue-500"></i> Cara Bermain
+                        </h4>
+                        <ol class="text-xs text-slate-600 space-y-2 list-decimal list-inside leading-relaxed">
+                            <li>Sentuh atau tahan mouse pada titik awal angka.</li>
+                            <li>Tarik garis mengikuti pola angka putus-putus.</li>
+                            <li>Selesaikan seluruh pola untuk mendapatkan bintang ⭐!</li>
+                        </ol>
+                    </div>
+
+                    <!-- Previous & Next Controls -->
+                    <div class="flex items-center gap-3">
+                        <button onclick="prevNumber()" class="btn-bounce flex-1 py-3 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-2xl text-center text-sm">
+                            <i class="fa-solid fa-chevron-left mr-1"></i> Sebelum
+                        </button>
+                        <button onclick="nextNumber()" class="btn-bounce flex-1 py-3 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-2xl text-center text-sm shadow-md">
+                            Lanjut <i class="fa-solid fa-chevron-right ml-1"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= SCREEN 3: MODUL 2 - MEWARNAI BENTUK ================= -->
+        <section id="screen-m2" class="hidden w-full flex-col items-center gap-4">
+            <!-- Top Controls -->
+            <div class="w-full bg-white rounded-2xl p-4 shadow-md border-2 border-emerald-200 flex flex-wrap items-center justify-between gap-3">
+                <div class="flex items-center gap-3">
+                    <button onclick="switchScreen('screen-menu')" class="btn-bounce px-3 py-1.5 bg-slate-100 text-slate-700 rounded-xl text-sm font-bold flex items-center gap-1.5">
+                        <i class="fa-solid fa-arrow-left"></i> Menu
+                    </button>
+                    <h2 class="text-lg sm:text-xl font-bold text-emerald-600 flex items-center gap-2">
+                        <span>Mewarnai Bentuk Geometri</span>
+                    </h2>
+                </div>
+
+                <!-- Reset All Colors -->
+                <button onclick="resetShapeColors()" class="btn-bounce px-3 py-1.5 bg-rose-100 text-rose-600 hover:bg-rose-200 rounded-xl text-xs font-bold flex items-center gap-1">
+                    <i class="fa-solid fa-arrow-rotate-left"></i> Ulangi Semua
+                </button>
+            </div>
+
+            <!-- Palette and Shapes Canvas Area -->
+            <div class="w-full flex flex-col lg:flex-row items-start justify-center gap-6 my-2">
+                
+                <!-- Color Palette Toolbar -->
+                <div class="bg-white p-4 rounded-3xl border-3 border-emerald-300 shadow-lg w-full lg:w-64 flex flex-col gap-3">
+                    <h3 class="font-bold text-slate-700 text-sm flex items-center gap-2">
+                        <i class="fa-solid fa-palette text-emerald-500"></i> Pilih Warna
+                    </h3>
+                    
+                    <!-- Color Swatches Grid -->
+                    <div id="color-palette" class="grid grid-cols-4 sm:grid-cols-4 lg:grid-cols-2 gap-3">
+                        <!-- Red -->
+                        <button onclick="selectColor('#ef4444', 'Merah')" class="color-btn btn-bounce h-12 rounded-2xl bg-red-500 border-4 border-white shadow-md relative flex items-center justify-center text-white font-bold active-color" data-color="#ef4444">
+                            <span class="sr-only">Merah</span>
+                        </button>
+                        <!-- Yellow -->
+                        <button onclick="selectColor('#eab308', 'Kuning')" class="color-btn btn-bounce h-12 rounded-2xl bg-yellow-500 border-4 border-white shadow-md relative flex items-center justify-center text-white font-bold" data-color="#eab308">
+                            <span class="sr-only">Kuning</span>
+                        </button>
+                        <!-- Blue -->
+                        <button onclick="selectColor('#3b82f6', 'Biru')" class="color-btn btn-bounce h-12 rounded-2xl bg-blue-500 border-4 border-white shadow-md relative flex items-center justify-center text-white font-bold" data-color="#3b82f6">
+                            <span class="sr-only">Biru</span>
+                        </button>
+                        <!-- Green -->
+                        <button onclick="selectColor('#22c55e', 'Hijau')" class="color-btn btn-bounce h-12 rounded-2xl bg-green-500 border-4 border-white shadow-md relative flex items-center justify-center text-white font-bold" data-color="#22c55e">
+                            <span class="sr-only">Hijau</span>
+                        </button>
+                        <!-- Purple -->
+                        <button onclick="selectColor('#a855f7', 'Ungu')" class="color-btn btn-bounce h-12 rounded-2xl bg-purple-500 border-4 border-white shadow-md relative flex items-center justify-center text-white font-bold" data-color="#a855f7">
+                            <span class="sr-only">Ungu</span>
+                        </button>
+                        <!-- Orange -->
+                        <button onclick="selectColor('#f97316', 'Oranye')" class="color-btn btn-bounce h-12 rounded-2xl bg-orange-500 border-4 border-white shadow-md relative flex items-center justify-center text-white font-bold" data-color="#f97316">
+                            <span class="sr-only">Oranye</span>
+                        </button>
+                        <!-- Black -->
+                        <button onclick="selectColor('#1e293b', 'Hitam')" class="color-btn btn-bounce h-12 rounded-2xl bg-slate-800 border-4 border-white shadow-md relative flex items-center justify-center text-white font-bold" data-color="#1e293b">
+                            <span class="sr-only">Hitam</span>
+                        </button>
+                        <!-- Eraser / White -->
+                        <button onclick="selectColor('#ffffff', 'Putih')" class="color-btn btn-bounce h-12 rounded-2xl bg-white border-4 border-slate-300 shadow-md relative flex items-center justify-center text-slate-600 font-bold" data-color="#ffffff">
+                            <i class="fa-solid fa-eraser"></i>
+                        </button>
+                    </div>
+
+                    <div class="mt-2 text-center bg-slate-100 py-2 rounded-xl border border-slate-200">
+                        <span class="text-xs text-slate-500 block">Warna Dipilih:</span>
+                        <span id="selected-color-name" class="font-bold text-slate-800 text-sm">🔴 Merah</span>
+                    </div>
+                </div>
+
+                <!-- Shapes Grid Canvas Display -->
+                <div class="flex-1 bg-white p-6 rounded-3xl border-4 border-emerald-300 shadow-xl grid grid-cols-2 sm:grid-cols-3 gap-6 w-full max-w-2xl">
+                    
+                    <!-- 1. Lingkaran -->
+                    <div onclick="colorShape('shape-circle', 'Lingkaran')" class="btn-bounce bg-emerald-50/50 rounded-2xl p-4 border-2 border-dashed border-emerald-300 flex flex-col items-center justify-center gap-3 cursor-pointer group">
+                        <svg class="w-24 h-24 sm:w-28 sm:h-28 transition-transform group-hover:scale-105 drop-shadow-sm" viewBox="0 0 100 100">
+                            <circle id="shape-circle" cx="50" cy="50" r="42" fill="#ffffff" stroke="#334155" stroke-width="6" />
+                        </svg>
+                        <span class="font-bold text-slate-700 text-sm">🔴 Lingkaran</span>
+                    </div>
+
+                    <!-- 2. Persegi -->
+                    <div onclick="colorShape('shape-square', 'Persegi')" class="btn-bounce bg-emerald-50/50 rounded-2xl p-4 border-2 border-dashed border-emerald-300 flex flex-col items-center justify-center gap-3 cursor-pointer group">
+                        <svg class="w-24 h-24 sm:w-28 sm:h-28 transition-transform group-hover:scale-105 drop-shadow-sm" viewBox="0 0 100 100">
+                            <rect id="shape-square" x="12" y="12" width="76" height="76" rx="6" fill="#ffffff" stroke="#334155" stroke-width="6" />
+                        </svg>
+                        <span class="font-bold text-slate-700 text-sm">🟨 Persegi</span>
+                    </div>
+
+                    <!-- 3. Segitiga -->
+                    <div onclick="colorShape('shape-triangle', 'Segitiga')" class="btn-bounce bg-emerald-50/50 rounded-2xl p-4 border-2 border-dashed border-emerald-300 flex flex-col items-center justify-center gap-3 cursor-pointer group">
+                        <svg class="w-24 h-24 sm:w-28 sm:h-28 transition-transform group-hover:scale-105 drop-shadow-sm" viewBox="0 0 100 100">
+                            <polygon id="shape-triangle" points="50,10 90,88 10,88" fill="#ffffff" stroke="#334155" stroke-width="6" stroke-linejoin="round" />
+                        </svg>
+                        <span class="font-bold text-slate-700 text-sm">🔺 Segitiga</span>
+                    </div>
+
+                    <!-- 4. Oval -->
+                    <div onclick="colorShape('shape-oval', 'Oval')" class="btn-bounce bg-emerald-50/50 rounded-2xl p-4 border-2 border-dashed border-emerald-300 flex flex-col items-center justify-center gap-3 cursor-pointer group">
+                        <svg class="w-24 h-24 sm:w-28 sm:h-28 transition-transform group-hover:scale-105 drop-shadow-sm" viewBox="0 0 100 100">
+                            <ellipse id="shape-oval" cx="50" cy="50" rx="44" ry="28" fill="#ffffff" stroke="#334155" stroke-width="6" />
+                        </svg>
+                        <span class="font-bold text-slate-700 text-sm">⬭ Oval</span>
+                    </div>
+
+                    <!-- 5. Segilima -->
+                    <div onclick="colorShape('shape-pentagon', 'Segilima')" class="btn-bounce bg-emerald-50/50 rounded-2xl p-4 border-2 border-dashed border-emerald-300 flex flex-col items-center justify-center gap-3 cursor-pointer group">
+                        <svg class="w-24 h-24 sm:w-28 sm:h-28 transition-transform group-hover:scale-105 drop-shadow-sm" viewBox="0 0 100 100">
+                            <polygon id="shape-pentagon" points="50,10 90,38 75,88 25,88 10,38" fill="#ffffff" stroke="#334155" stroke-width="6" stroke-linejoin="round" />
+                        </svg>
+                        <span class="font-bold text-slate-700 text-sm">⬟ Segilima</span>
+                    </div>
+
+                    <!-- 6. Segienam -->
+                    <div onclick="colorShape('shape-hexagon', 'Segienam')" class="btn-bounce bg-emerald-50/50 rounded-2xl p-4 border-2 border-dashed border-emerald-300 flex flex-col items-center justify-center gap-3 cursor-pointer group">
+                        <svg class="w-24 h-24 sm:w-28 sm:h-28 transition-transform group-hover:scale-105 drop-shadow-sm" viewBox="0 0 100 100">
+                            <polygon id="shape-hexagon" points="50,8 88,28 88,72 50,92 12,72 12,28" fill="#ffffff" stroke="#334155" stroke-width="6" stroke-linejoin="round" />
+                        </svg>
+                        <span class="font-bold text-slate-700 text-sm">⬢ Segienam</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- ================= MODAL: SERTIFIKAT JUARA ================= -->
+    <div id="modal-certificate" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden animate-fadeIn">
+        <div class="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 border-4 border-yellow-400 shadow-2xl relative overflow-hidden flex flex-col gap-5">
+            
+            <!-- Close Modal Button -->
+            <button onclick="closeCertificateModal()" class="absolute top-4 right-4 w-10 h-10 bg-slate-100 hover:bg-slate-200 rounded-full text-slate-600 font-bold flex items-center justify-center z-20">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+
+            <!-- Printable Certificate Document Box -->
+            <div id="printable-certificate" class="bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 border-8 border-double border-amber-400 rounded-2xl p-6 sm:p-8 text-center relative shadow-inner">
+                
+                <!-- Corner Ribbons -->
+                <div class="text-3xl absolute top-2 left-2 opacity-80">⭐</div>
+                <div class="text-3xl absolute top-2 right-2 opacity-80">⭐</div>
+                <div class="text-3xl absolute bottom-2 left-2 opacity-80">🏆</div>
+                <div class="text-3xl absolute bottom-2 right-2 opacity-80">🎈</div>
+
+                <p class="text-xs uppercase tracking-widest font-bold text-amber-700 mb-1">Sertifikat Penghargaan PAUD</p>
+                <h2 class="text-2xl sm:text-3xl font-extrabold text-amber-900 mb-3">JUARA BELAJAR & BENTUK</h2>
+                <p class="text-xs text-slate-600 italic mb-4">Diberikan dengan bangga kepada:</p>
+
+                <!-- Student Name Input -->
+                <div class="max-w-md mx-auto mb-4">
+                    <input type="text" id="student-name-input" placeholder="Tulis Namamu Di Sini..." value="Adik Pintar" class="w-full text-center text-xl sm:text-2xl font-bold text-pink-600 border-b-2 border-dashed border-amber-500 bg-transparent py-1 focus:outline-none focus:border-pink-500">
+                </div>
+
+                <p class="text-xs sm:text-sm text-slate-700 max-w-md mx-auto leading-relaxed mb-6">
+                    Telah berhasil menyelesaikan pembelajaran menulis angka 1–10 dan mewarnai bentuk geometri dengan sangat baik! 🎉
+                </p>
+
+                <!-- Badges & Stats -->
+                <div class="flex items-center justify-center gap-6 py-3 border-y border-amber-200 my-2">
+                    <div>
+                        <span class="block text-xl font-bold text-amber-800" id="cert-stars">0 ⭐</span>
+                        <span class="text-[10px] text-slate-500">Total Bintang</span>
+                    </div>
+                    <div class="h-8 w-px bg-amber-200"></div>
+                    <div>
+                        <span class="block text-xl font-bold text-emerald-800" id="cert-date">2026</span>
+                        <span class="text-[10px] text-slate-500">Tanggal Selesai</span>
+                    </div>
+                </div>
+
+                <div class="mt-4 text-[11px] text-amber-800 font-semibold italic">
+                    "Semangat Belajar dan Terus Berkarya!"
+                </div>
+            </div>
+
+            <!-- Modal Action Buttons -->
+            <div class="flex items-center justify-end gap-3 pt-2">
+                <button onclick="window.print()" class="btn-bounce px-5 py-2.5 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-2xl shadow-md text-sm flex items-center gap-2">
+                    <i class="fa-solid fa-print"></i> Cetak / Simpan Sertifikat
+                </button>
+                <button onclick="closeCertificateModal()" class="btn-bounce px-5 py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-2xl text-sm">
+                    Tutup
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /* ===================================================================
+           STATE MANAGEMENT & GAME DATA
+           =================================================================== */
+        const state = {
+            stars: 0,
+            bgmEnabled: false,
+            voiceEnabled: true,
+            currentModule: 'menu',
+            
+            // Module 1: Tracing
+            m1CurrentIndex: 1, // 1 to 10
+            m1Completed: new Array(11).fill(false),
+            
+            // Module 2: Coloring Shapes
+            selectedColor: '#ef4444',
+            selectedColorName: 'Merah',
+            m2ColoredShapes: new Set(),
+            
+            // Touch/Mouse Tracing state
+            isDrawing: false,
+            tracePoints: [],
+            checkpointsHit: new Set()
+        };
+
+        // Paths for numbers 1-10 on 340x340 canvas
+        const NUMBER_PATHS = {
+            1: [
+                {x: 120, y: 110}, {x: 170, y: 70}, {x: 170, y: 270},
+                {x: 120, y: 270}, {x: 220, y: 270}
+            ],
+            2: [
+                {x: 100, y: 120}, {x: 170, y: 70}, {x: 240, y: 120},
+                {x: 180, y: 190}, {x: 100, y: 270}, {x: 240, y: 270}
+            ],
+            3: [
+                {x: 110, y: 90}, {x: 230, y: 90}, {x: 160, y: 160},
+                {x: 230, y: 210}, {x: 110, y: 260}
+            ],
+            4: [
+                {x: 200, y: 70}, {x: 100, y: 190}, {x: 250, y: 190},
+                {x: 200, y: 140}, {x: 200, y: 270}
+            ],
+            5: [
+                {x: 230, y: 80}, {x: 120, y: 80}, {x: 115, y: 160},
+                {x: 220, y: 170}, {x: 210, y: 260}, {x: 110, y: 260}
+            ],
+            6: [
+                {x: 220, y: 90}, {x: 120, y: 160}, {x: 120, y: 230},
+                {x: 220, y: 230}, {x: 120, y: 170}
+            ],
+            7: [
+                {x: 100, y: 80}, {x: 240, y: 80}, {x: 160, y: 180}, {x: 130, y: 270}
+            ],
+            8: [
+                {x: 170, y: 70}, {x: 220, y: 110}, {x: 120, y: 180},
+                {x: 220, y: 230}, {x: 120, y: 230}, {x: 220, y: 180},
+                {x: 120, y: 110}, {x: 170, y: 70}
+            ],
+            9: [
+                {x: 220, y: 150}, {x: 120, y: 150}, {x: 120, y: 80},
+                {x: 220, y: 80}, {x: 220, y: 260}, {x: 120, y: 270}
+            ],
+            10: [
+                // '1'
+                {x: 70, y: 100}, {x: 110, y: 70}, {x: 110, y: 260},
+                // '0'
+                {x: 210, y: 70}, {x: 270, y: 120}, {x: 270, y: 210},
+                {x: 210, y: 260}, {x: 160, y: 210}, {x: 160, y: 120}, {x: 210, y: 70}
+            ]
+        };
+
+        /* ===================================================================
+           WEB AUDIO SYNTHESIZER (Procedural sound effects & background music)
+           =================================================================== */
+        let audioCtx = null;
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        // Play cheerful success melody & applause sound effect
+        function playFanfareSound() {
+            try {
+                initAudio();
+                const notes = [261.63, 329.63, 392.00, 523.25]; // C E G C
+                notes.forEach((freq, i) => {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(freq, audioCtx.currentTime + i * 0.12);
+                    gain.gain.setValueAtTime(0.2, audioCtx.currentTime + i * 0.12);
+                    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + i * 0.12 + 0.3);
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start(audioCtx.currentTime + i * 0.12);
+                    osc.stop(audioCtx.currentTime + i * 0.12 + 0.35);
+                });
+            } catch(e) { console.log(e); }
+        }
+
+        // Pop sound when touching/coloring
+        function playPopSound() {
+            try {
+                initAudio();
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(800, audioCtx.currentTime + 0.08);
+                gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.08);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.09);
+            } catch(e) { console.log(e); }
+        }
+
+        // Background Music Synthesizer (Loops soft bouncy tune)
+        let bgmInterval = null;
+        function toggleBGM() {
+            state.bgmEnabled = !state.bgmEnabled;
+            const musicBtn = document.getElementById('btn-music');
+            const musicIcon = document.getElementById('icon-music');
+
+            if (state.bgmEnabled) {
+                musicBtn.classList.add('bg-indigo-500', 'text-white');
+                musicBtn.classList.remove('bg-indigo-100', 'text-indigo-600');
+                startBGM();
+            } else {
+                musicBtn.classList.remove('bg-indigo-500', 'text-white');
+                musicBtn.classList.add('bg-indigo-100', 'text-indigo-600');
+                stopBGM();
+            }
+        }
+
+        function startBGM() {
+            initAudio();
+            stopBGM();
+            const tune = [261.63, 329.63, 392.00, 329.63, 349.23, 440.00, 392.00, 293.66];
+            let noteIdx = 0;
+            bgmInterval = setInterval(() => {
+                if (!state.bgmEnabled) return;
+                try {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(tune[noteIdx], audioCtx.currentTime);
+                    gain.gain.setValueAtTime(0.04, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.35);
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.4);
+                    noteIdx = (noteIdx + 1) % tune.length;
+                } catch(e) {}
+            }, 500);
+        }
+
+        function stopBGM() {
+            if (bgmInterval) clearInterval(bgmInterval);
+        }
+
+        // Text To Speech (Indonesian voice for numbers and positive reinforcement)
+        function speakText(text) {
+            if (!state.voiceEnabled) return;
+            window.speechSynthesis.cancel(); // Stop ongoing speech
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'id-ID';
+            utterance.rate = 0.9; // Slightly slower for clear kids speech
+            utterance.pitch = 1.2; // Cheerful pitch
+            window.speechSynthesis.speak(utterance);
+        }
+
+        function toggleVoice() {
+            state.voiceEnabled = !state.voiceEnabled;
+            const speechBtn = document.getElementById('btn-speech');
+            if (state.voiceEnabled) {
+                speechBtn.classList.add('bg-emerald-500', 'text-white');
+                speechBtn.classList.remove('bg-emerald-100', 'text-emerald-600');
+                speakText("Suara pembimbing aktif!");
+            } else {
+                speechBtn.classList.remove('bg-emerald-500', 'text-white');
+                speechBtn.classList.add('bg-emerald-100', 'text-emerald-600');
+            }
+        }
+
+        /* ===================================================================
+           NAVIGATION & NAVIGATION SCREEN SWITCHING
+           =================================================================== */
+        function switchScreen(screenId) {
+            document.getElementById('screen-menu').classList.add('hidden');
+            document.getElementById('screen-m1').classList.add('hidden');
+            document.getElementById('screen-m2').classList.add('hidden');
+
+            document.getElementById(screenId).classList.remove('hidden');
+            document.getElementById(screenId).classList.add('flex');
+            state.currentModule = screenId;
+
+            if (screenId === 'screen-m1') {
+                initModule1Canvas();
+                loadNumber(state.m1CurrentIndex);
+            }
+        }
+
+        function addStar() {
+            state.stars += 1;
+            document.getElementById('global-star-count').innerText = state.stars;
+            playFanfareSound();
+            confetti({
+                particleCount: 50,
+                spread: 60,
+                origin: { y: 0.6 }
+            });
+        }
+
+        /* ===================================================================
+           MODULE 1: MENULIS ANGKA 1-10
+           =================================================================== */
+        let guideCanvas, guideCtx, traceCanvas, traceCtx;
+
+        function startModule1() {
+            switchScreen('screen-m1');
+            renderM1NavDots();
+        }
+
+        function renderM1NavDots() {
+            const navContainer = document.getElementById('m1-number-nav');
+            navContainer.innerHTML = '';
+            for (let i = 1; i <= 10; i++) {
+                const btn = document.createElement('button');
+                btn.className = `w-9 h-9 rounded-xl font-bold text-sm flex items-center justify-center transition-all ${
+                    i === state.m1CurrentIndex ? 'bg-blue-600 text-white scale-110 shadow-md' : 
+                    state.m1Completed[i] ? 'bg-amber-100 text-amber-700 border-2 border-amber-400' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                }`;
+                btn.innerHTML = state.m1Completed[i] ? `${i}⭐` : `${i}`;
+                btn.onclick = () => loadNumber(i);
+                navContainer.appendChild(btn);
+            }
+
+            // Update badge in main menu
+            const completedCount = state.m1Completed.filter(Boolean).length;
+            document.getElementById('badge-m1').innerText = `${completedCount}/10 Selesai`;
+        }
+
+        function initModule1Canvas() {
+            guideCanvas = document.getElementById('canvas-guide');
+            guideCtx = guideCanvas.getContext('2d');
+            traceCanvas = document.getElementById('canvas-trace');
+            traceCtx = traceCanvas.getContext('2d');
+
+            // Event Listeners for Touch & Mouse Tracing
+            traceCanvas.addEventListener('mousedown', startTracing);
+            traceCanvas.addEventListener('mousemove', traceMove);
+            window.addEventListener('mouseup', stopTracing);
+
+            traceCanvas.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                const touch = e.touches[0];
+                startTracing(touch);
+            });
+            traceCanvas.addEventListener('touchmove', (e) => {
+                e.preventDefault();
+                const touch = e.touches[0];
+                traceMove(touch);
+            });
+            window.addEventListener('touchend', stopTracing);
+        }
+
+        function loadNumber(num) {
+            state.m1CurrentIndex = num;
+            document.getElementById('m1-current-number-title').innerText = num;
+            document.getElementById('m1-star-success').classList.add('hidden');
+            document.getElementById('m1-star-success').classList.remove('flex');
+
+            renderM1NavDots();
+            resetCurrentTrace();
+            drawNumberGuide(num);
+
+            speakText(`Ini angka ${num}. Yuk, tulis!`);
+        }
+
+        function speakCurrentNumberPrompt() {
+            speakText(`Ini angka ${state.m1CurrentIndex}`);
+        }
+
+        function drawNumberGuide(num) {
+            guideCtx.clearRect(0, 0, guideCanvas.width, guideCanvas.height);
+            const pathPoints = NUMBER_PATHS[num] || [];
+
+            if (pathPoints.length < 2) return;
+
+            // Draw dashed guide line
+            guideCtx.beginPath();
+            guideCtx.strokeStyle = '#cbd5e1';
+            guideCtx.lineWidth = 32;
+            guideCtx.lineCap = 'round';
+            guideCtx.lineJoin = 'round';
+            guideCtx.setLineDash([12, 12]);
+
+            guideCtx.moveTo(pathPoints[0].x, pathPoints[0].y);
+            for (let i = 1; i < pathPoints.length; i++) {
+                guideCtx.lineTo(pathPoints[i].x, pathPoints[i].y);
+            }
+            guideCtx.stroke();
+            guideCtx.setLineDash([]); // Reset dash
+
+            // Draw Start Point Marker (Green circle)
+            guideCtx.fillStyle = '#22c55e';
+            guideCtx.beginPath();
+            guideCtx.arc(pathPoints[0].x, pathPoints[0].y, 18, 0, Math.PI * 2);
+            guideCtx.fill();
+            guideCtx.fillStyle = '#ffffff';
+            guideCtx.font = 'bold 12px Fredoka';
+            guideCtx.textAlign = 'center';
+            guideCtx.textBaseline = 'middle';
+            guideCtx.fillText('MULAI', pathPoints[0].x, pathPoints[0].y);
+
+            // Set up checkpoint tracking
+            state.checkpointsHit.clear();
+        }
+
+        function resetCurrentTrace() {
+            traceCtx.clearRect(0, 0, traceCanvas.width, traceCanvas.height);
+            state.checkpointsHit.clear();
+            state.tracePoints = [];
+        }
+
+        function getCanvasCoords(evt) {
+            const rect = traceCanvas.getBoundingClientRect();
+            return {
+                x: (evt.clientX - rect.left) * (traceCanvas.width / rect.width),
+                y: (evt.clientY - rect.top) * (traceCanvas.height / rect.height)
+            };
+        }
+
+        function startTracing(evt) {
+            state.isDrawing = true;
+            const pos = getCanvasCoords(evt);
+            state.tracePoints = [pos];
+            
+            traceCtx.beginPath();
+            traceCtx.strokeStyle = '#ec4899'; // Bright pink tracing stroke
+            traceCtx.lineWidth = 22;
+            traceCtx.lineCap = 'round';
+            traceCtx.lineJoin = 'round';
+            traceCtx.moveTo(pos.x, pos.y);
+            
+            checkCheckpoints(pos);
+            playPopSound();
+        }
+
+        function traceMove(evt) {
+            if (!state.isDrawing) return;
+            const pos = getCanvasCoords(evt);
+            state.tracePoints.push(pos);
+
+            traceCtx.lineTo(pos.x, pos.y);
+            traceCtx.stroke();
+
+            checkCheckpoints(pos);
+        }
+
+        function stopTracing() {
+            if (!state.isDrawing) return;
+            state.isDrawing = false;
+            verifyTracingCompletion();
+        }
+
+        // Verify user traced close enough to key checkpoints
+        function checkCheckpoints(pos) {
+            const pathPoints = NUMBER_PATHS[state.m1CurrentIndex] || [];
+            pathPoints.forEach((pt, idx) => {
+                const dist = Math.hypot(pt.x - pos.x, pt.y - pos.y);
+                if (dist < 40) { // Tolerance radius
+                    state.checkpointsHit.add(idx);
+                }
+            });
+        }
+
+        function verifyTracingCompletion() {
+            const requiredPoints = NUMBER_PATHS[state.m1CurrentIndex] || [];
+            const requiredCount = requiredPoints.length;
+            const hitRatio = state.checkpointsHit.size / requiredCount;
+
+            // If user covered at least 70% of checkpoint nodes
+            if (hitRatio >= 0.7 && !state.m1Completed[state.m1CurrentIndex]) {
+                state.m1Completed[state.m1CurrentIndex] = true;
+                addStar();
+                renderM1NavDots();
+
+                // Speech feedback
+                let praise = "";
+                if (state.m1CurrentIndex === 1) praise = "Hebat! Ini angka 1.";
+                else if (state.m1CurrentIndex === 2) praise = "Bagus! Kamu berhasil menulis angka 2.";
+                else praise = `Luar biasa! Kamu berhasil menulis angka ${state.m1CurrentIndex}.`;
+
+                speakText(praise);
+
+                // Show completion banner overlay
+                document.getElementById('m1-success-text').innerText = praise;
+                document.getElementById('m1-star-success').classList.remove('hidden');
+                document.getElementById('m1-star-success').classList.add('flex');
+
+                // Check all 10 numbers completion reward
+                const totalFinished = state.m1Completed.filter(Boolean).length;
+                if (totalFinished === 10) {
+                    setTimeout(() => {
+                        speakText("Selamat! Kamu Juara Menulis Angka!");
+                        openCertificateModal();
+                    }, 1200);
+                }
+            }
+        }
+
+        function nextNumber() {
+            if (state.m1CurrentIndex < 10) {
+                loadNumber(state.m1CurrentIndex + 1);
+            } else {
+                switchScreen('screen-menu');
+            }
+        }
+
+        function prevNumber() {
+            if (state.m1CurrentIndex > 1) {
+                loadNumber(state.m1CurrentIndex - 1);
+            }
+        }
+
+        /* ===================================================================
+           MODULE 2: MEWARNAI BENTUK GEOMETRI
+           =================================================================== */
+        function startModule2() {
+            switchScreen('screen-m2');
+            speakText("Pilih warna, lalu sentuh bentuk geometri yang ingin kamu warnai!");
+        }
+
+        function selectColor(colorHex, colorName) {
+            state.selectedColor = colorHex;
+            state.selectedColorName = colorName;
+
+            document.getElementById('selected-color-name').innerText = `${getEmojiForColor(colorName)} ${colorName}`;
+
+            // Update UI buttons active highlight
+            document.querySelectorAll('.color-btn').forEach(btn => {
+                btn.classList.remove('ring-4', 'ring-emerald-400', 'scale-110');
+                if (btn.getAttribute('data-color') === colorHex) {
+                    btn.classList.add('ring-4', 'ring-emerald-400', 'scale-110');
+                }
+            });
+
+            playPopSound();
+            speakText(`Warna ${colorName}`);
+        }
+
+        function getEmojiForColor(name) {
+            const map = { 'Merah': '🔴', 'Kuning': '🟡', 'Biru': '🔵', 'Hijau': '🟢', 'Ungu': '🟣', 'Oranye': '🟠', 'Hitam': '⚫', 'Putih': '⚪' };
+            return map[name] || '🎨';
+        }
+
+        function colorShape(elementId, shapeName) {
+            const shapeElem = document.getElementById(elementId);
+            if (!shapeElem) return;
+
+            shapeElem.setAttribute('fill', state.selectedColor);
+            playPopSound();
+
+            speakText(`${shapeName} berwarna ${state.selectedColorName}`);
+
+            // Check star reward for coloring shape first time
+            if (!state.m2ColoredShapes.has(elementId)) {
+                state.m2ColoredShapes.add(elementId);
+                addStar();
+
+                // Update badge in menu
+                document.getElementById('badge-m2').innerText = `${state.m2ColoredShapes.size}/6 Selesai`;
+
+                // All 6 shapes colored
+                if (state.m2ColoredShapes.size === 6) {
+                    setTimeout(() => {
+                        speakText("Hebat! Semua bentuk geometri sudah berwarna.");
+                        confetti({ particleCount: 100, spread: 80, origin: { y: 0.5 } });
+                    }, 800);
+                }
+            }
+        }
+
+        function resetShapeColors() {
+            const shapeIds = ['shape-circle', 'shape-square', 'shape-triangle', 'shape-oval', 'shape-pentagon', 'shape-hexagon'];
+            shapeIds.forEach(id => {
+                const elem = document.getElementById(id);
+                if (elem) elem.setAttribute('fill', '#ffffff');
+            });
+            state.m2ColoredShapes.clear();
+            document.getElementById('badge-m2').innerText = `0/6 Selesai`;
+            speakText("Warna bentuk dibersihkan.");
+        }
+
+        /* ===================================================================
+           MODAL & SERTIFIKAT JUARA
+           =================================================================== */
+        function openCertificateModal() {
+            document.getElementById('cert-stars').innerText = `${state.stars} ⭐`;
+            const today = new Date();
+            const dateStr = today.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+            document.getElementById('cert-date').innerText = dateStr;
+
+            document.getElementById('modal-certificate').classList.remove('hidden');
+            playFanfareSound();
+            confetti({ particleCount: 100, spread: 90, origin: { y: 0.4 } });
+        }
+
+        function closeCertificateModal() {
+            document.getElementById('modal-certificate').classList.add('hidden');
+        }
+
+        /* ===================================================================
+           APPLICATION INITIALIZATION
+           =================================================================== */
+        window.onload = function() {
+            // Preload screen menu
+            switchScreen('screen-menu');
+            
+            // Allow user gesture to initialize web audio
+            document.body.addEventListener('click', function userGesture() {
+                initAudio();
+                document.body.removeEventListener('click', userGesture);
+            }, { once: true });
+        };
+    </script>
+</body>
+</html>
